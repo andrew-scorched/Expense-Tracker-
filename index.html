@@ -68,6 +68,8 @@ button { cursor: pointer; }
 .trip-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .trip-name { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -.01em; background: none; border: 0; padding: 0; text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trip-name small { display: block; font-family: var(--font-body); font-weight: 500; font-size: 12px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.trip-name span { vertical-align: middle; }
+.trip-name .chev { width: 18px; height: 18px; vertical-align: middle; margin-left: 4px; color: var(--muted); }
 .trip-input { font-family: var(--font-display); font-weight: 700; font-size: 20px; width: 100%; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
 .icon-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; font-size: 13px; }
 .icon-btn svg { width: 16px; height: 16px; }
@@ -185,6 +187,20 @@ img { max-width: 100%; }
 .data-opt .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--surface); }
 .data-opt strong { display: block; font-weight: 700; }
 .data-opt small { color: var(--muted); font-size: 13px; }
+.new-trip { display: block; margin-top: 14px; }
+.new-trip-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.new-trip-row .btn-primary { flex: none; height: 46px; padding: 0 20px; }
+.new-trip-row .btn-danger { height: 46px; }
+.trips-label { margin-top: 20px; }
+.trip-list { display: grid; gap: 8px; }
+.trip-opt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; text-align: left; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface-2); }
+.trip-opt[aria-current="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.trip-opt strong { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trip-opt .amt { font-weight: 700; text-align: right; }
+.trip-opt small { color: var(--muted); font-size: 13px; }
+.trip-opt .badge { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; border-radius: 6px; background: var(--accent); color: var(--accent-ink); justify-self: end; }
+.trip-manage { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+.trip-manage .field-label { margin-bottom: 0; }
 .backup-info { font-size: 13px; color: var(--muted); margin: 12px 2px 0; }
 </style>
 </head>
@@ -193,8 +209,7 @@ img { max-width: 100%; }
 <div class="app">
   <header class="top">
     <div class="trip-row">
-      <button class="trip-name" id="tripBtn" type="button" title="Rename trip"><small>Current trip</small><span id="tripName">Work trip</span></button>
-      <input class="trip-input" id="tripInput" hidden maxlength="60" aria-label="Trip name">
+      <button class="trip-name" id="tripBtn" type="button" aria-haspopup="dialog"><small>Trip · tap to switch</small><span id="tripName">Work trip</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
       <button class="icon-btn" id="dataBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Export</button>
     </div>
     <section class="summary" aria-label="Totals">
@@ -244,13 +259,31 @@ img { max-width: 100%; }
 
 <div class="viewer" id="viewer" hidden><img id="viewerImg" alt="Receipt"><div class="viewer-bar"><button type="button" id="viewerShare">Share</button><button type="button" id="viewerClose">Close</button></div></div>
 
+<div class="scrim" id="tripScrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tripsTitle">
+    <div class="grab"></div>
+    <div class="sheet-head"><h2 id="tripsTitle">Trips</h2><button class="link-btn" id="tripsClose" type="button">Done</button></div>
+    <form class="new-trip" id="newTripForm" autocomplete="off">
+      <label class="field-label" for="newTripName">Start a new trip</label>
+      <div class="new-trip-row"><input class="inp" id="newTripName" placeholder="e.g. Calgary – Nov" maxlength="60"><button class="btn-primary" id="newTripBtn" type="submit">Start</button></div>
+    </form>
+    <span class="field-label trips-label">Your trips</span>
+    <div class="trip-list" id="tripList"></div>
+    <div class="trip-manage">
+      <label class="field-label" for="renameTrip">Rename current trip</label>
+      <div class="new-trip-row"><input class="inp" id="renameTrip" maxlength="60"><button class="btn-danger" id="deleteTripBtn" type="button">Delete trip</button></div>
+      <p class="stamp" id="deleteHint" hidden>Deleting removes this trip’s expenses and receipts from this phone. Tap again to confirm.</p>
+    </div>
+  </div>
+</div>
+
 <div class="scrim" id="dataScrim" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dataTitle">
     <div class="grab"></div>
     <div class="sheet-head"><h2 id="dataTitle">Export &amp; backup</h2><button class="link-btn" id="dataClose" type="button">Done</button></div>
     <div class="data-list">
-      <button class="data-opt" id="csvBtn" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></svg></span><span><strong>Export spreadsheet (CSV)</strong><small>Every expense with totals, for your expense report.</small></span></button>
-      <button class="data-opt" id="backupBtn" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 18 8a4 4 0 0 1-1 8M12 12v9M9 15l3-3 3 3"/></svg></span><span><strong>Back up everything</strong><small>One file with all expenses and receipt photos. Save it to Files, Drive or email.</small></span></button>
+      <button class="data-opt" id="csvBtn" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></svg></span><span><strong>Export this trip (CSV)</strong><small>Every expense in the current trip with totals, for your expense report.</small></span></button>
+      <button class="data-opt" id="backupBtn" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 18 8a4 4 0 0 1-1 8M12 12v9M9 15l3-3 3 3"/></svg></span><span><strong>Back up everything</strong><small>One file with all trips, expenses and receipt photos. Save it to Files, Drive or email.</small></span></button>
       <button class="data-opt" id="restoreBtn" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg></span><span><strong>Restore from backup</strong><small>Adds expenses from a backup file. Nothing gets deleted.</small></span></button>
     </div>
     <p class="backup-info" id="backupInfo"></p>
@@ -295,12 +328,30 @@ const isStandalone = () => window.matchMedia('(display-mode: standalone)').match
 let idb = null;
 function openDB() {
   return new Promise((resolve, reject) => {
-    const r = indexedDB.open('expense-log', 1);
-    r.onupgradeneeded = () => {
-      const d = r.result;
-      d.createObjectStore('expenses', { keyPath: 'id' });
-      d.createObjectStore('receipts', { keyPath: 'id' });
-      d.createObjectStore('settings');
+    const r = indexedDB.open('expense-log', 2);
+    r.onupgradeneeded = (ev) => {
+      const d = r.result, t = r.transaction;
+      if (ev.oldVersion < 1) {
+        d.createObjectStore('expenses', { keyPath: 'id' });
+        d.createObjectStore('receipts', { keyPath: 'id' });
+        d.createObjectStore('settings');
+      }
+      if (ev.oldVersion < 2) {
+        // Trips arrive in v2: put every existing expense into one starting trip
+        d.createObjectStore('trips', { keyPath: 'id' });
+        const id = newId();
+        const nameReq = t.objectStore('settings').get('tripName');
+        nameReq.onsuccess = () => {
+          t.objectStore('trips').put({ id, name: nameReq.result || 'Work trip', createdAt: new Date().toISOString() });
+          t.objectStore('settings').put(id, 'currentTrip');
+          const cur = t.objectStore('expenses').openCursor();
+          cur.onsuccess = () => {
+            const c = cur.result; if (!c) return;
+            if (!c.value.tripId) c.update({ ...c.value, tripId: id });
+            c.continue();
+          };
+        };
+      }
     };
     r.onsuccess = () => resolve(r.result);
     r.onerror = () => reject(r.error);
@@ -318,6 +369,8 @@ function run(stores, mode, fn) {
   });
 }
 const getAllExpenses = () => run('expenses', 'readonly', t => t.objectStore('expenses').getAll());
+const getAllTrips = () => run('trips', 'readonly', t => t.objectStore('trips').getAll());
+const putTrip = (trip) => run('trips', 'readwrite', t => { t.objectStore('trips').put(trip); });
 const getReceipt = (id) => run('receipts', 'readonly', t => t.objectStore('receipts').get(id));
 const getAllReceipts = () => run('receipts', 'readonly', t => t.objectStore('receipts').getAll());
 const getSetting = (k) => run('settings', 'readonly', t => t.objectStore('settings').get(k));
@@ -333,7 +386,10 @@ async function receiptURL(id) {
   return u;
 }
 
-let expenses = [];
+let allExpenses = [];
+let expenses = []; // current trip only
+let trips = [];
+let currentTripId = null;
 let loaded = false;
 let filter = 'all';
 let query = '';
@@ -350,12 +406,26 @@ function toast(msg) {
 }
 
 async function reload() {
+  trips = (await getAllTrips()).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  if (!trips.length) {
+    const t = { id: newId(), name: 'Work trip', createdAt: new Date().toISOString() };
+    await putTrip(t); trips = [t];
+  }
+  if (!trips.some(t => t.id === currentTripId)) {
+    const saved = await getSetting('currentTrip');
+    currentTripId = trips.some(t => t.id === saved) ? saved : trips[0].id;
+    await setSetting('currentTrip', currentTripId);
+  }
+  tripName = trips.find(t => t.id === currentTripId).name;
+  $('tripName').textContent = tripName;
   const rows = await getAllExpenses();
-  expenses = rows.filter(e => typeof e.amount === 'number')
+  allExpenses = rows.filter(e => typeof e.amount === 'number')
     .map(e => ({ ...e, date: e.date || localNow() }))
     .sort((a, b) => b.date.localeCompare(a.date) || String(b.createdAt).localeCompare(String(a.createdAt)));
+  expenses = allExpenses.filter(e => e.tripId === currentTripId);
   loaded = true;
   renderAll();
+  if (!$('tripScrim').hidden) renderTrips();
 }
 
 /* ---------- Rendering ---------- */
@@ -392,7 +462,7 @@ function renderList() {
   const list = $('list');
   if (!loaded) return;
   if (!expenses.length) {
-    list.innerHTML = `<div class="empty"><h2>No expenses yet</h2><p>Tap <b>Add expense</b> after each purchase. Snap the receipt or attach an Uber screenshot, and it’s saved on this phone.</p></div>`;
+    list.innerHTML = `<div class="empty"><h2>No expenses in ${esc(tripName)} yet</h2><p>Tap <b>Add expense</b> after each purchase. Snap the receipt or attach an Uber screenshot, and it’s saved on this phone.</p></div>`;
     return;
   }
   const q = query.trim().toLowerCase();
@@ -432,7 +502,7 @@ function renderReceipts() {
 }
 
 function openScrim(id) { $(id).hidden = false; document.body.style.overflow = 'hidden'; }
-function closeScrim(id) { $(id).hidden = true; if ($('scrim').hidden && $('dataScrim').hidden) document.body.style.overflow = ''; }
+function closeScrim(id) { $(id).hidden = true; if ($('scrim').hidden && $('dataScrim').hidden && $('tripScrim').hidden) document.body.style.overflow = ''; }
 
 async function openSheet(id) {
   editing = id || null;
@@ -512,6 +582,7 @@ async function save(ev) {
   const prev = editing ? expenses.find(x => x.id === editing) : null;
   const data = {
     id: editing || newId(),
+    tripId: prev?.tripId || currentTripId,
     amount,
     category: draft.category,
     merchant: $('fMerchant').value.trim(),
@@ -615,17 +686,18 @@ async function exportCSV() {
 
 const blobToDataURL = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
 async function backup() {
-  if (!expenses.length) { toast('Nothing to back up yet'); return; }
+  if (!allExpenses.length) { toast('Nothing to back up yet'); return; }
   const btn = $('backupBtn'); btn.disabled = true; btn.textContent = 'Preparing…';
   try {
     const receipts = await getAllReceipts();
     const payload = {
-      app: 'trip-expense-log', version: 1, exportedAt: new Date().toISOString(), tripName,
+      app: 'trip-expense-log', version: 2, exportedAt: new Date().toISOString(),
+      trips: await getAllTrips(),
       expenses: await getAllExpenses(),
       receipts: await Promise.all(receipts.map(async r => ({ id: r.id, type: r.type, data: await blobToDataURL(r.blob) })))
     };
     const day = localNow().slice(0, 10);
-    const file = new File([JSON.stringify(payload)], `${safeName()}-backup-${day}.json`, { type: 'application/json' });
+    const file = new File([JSON.stringify(payload)], `expenses-backup-${day}.json`, { type: 'application/json' });
     if (await shareOrDownload(file)) { store.set('lastBackup', new Date().toISOString()); closeScrim('dataScrim'); toast('Backup created'); }
   } catch { toast('Couldn’t create the backup. Try again.'); }
   finally { btn.disabled = false; btn.textContent = 'Back up everything'; renderBackupInfo(); }
@@ -635,11 +707,22 @@ async function restore(file) {
     const payload = JSON.parse(await file.text());
     if (payload.app !== 'trip-expense-log' || !Array.isArray(payload.expenses)) throw new Error('bad');
     const receipts = await Promise.all((payload.receipts || []).map(async r => ({ id: r.id, type: r.type, blob: await (await fetch(r.data)).blob() })));
-    await run(['expenses', 'receipts'], 'readwrite', t => {
+    const restoredTrips = Array.isArray(payload.trips) ? payload.trips.filter(t => t && t.id && t.name) : [];
+    // Older backups had no trips: give their expenses a trip of their own
+    let fallback = null;
+    if (payload.expenses.some(e => e && !restoredTrips.some(t => t.id === e.tripId))) {
+      fallback = { id: newId(), name: payload.tripName || 'Restored trip', createdAt: new Date().toISOString() };
+      restoredTrips.push(fallback);
+    }
+    await run(['expenses', 'receipts', 'trips'], 'readwrite', t => {
       receipts.forEach(r => t.objectStore('receipts').put(r));
-      payload.expenses.forEach(e => { if (e && e.id && typeof e.amount === 'number') t.objectStore('expenses').put(e); });
+      restoredTrips.forEach(tr => t.objectStore('trips').put(tr));
+      payload.expenses.forEach(e => {
+        if (!e || !e.id || typeof e.amount !== 'number') return;
+        const tripId = restoredTrips.some(tr => tr.id === e.tripId && tr !== fallback) ? e.tripId : fallback.id;
+        t.objectStore('expenses').put({ ...e, tripId });
+      });
     });
-    if (payload.tripName && !expenses.length) { tripName = payload.tripName; $('tripName').textContent = tripName; await setSetting('tripName', tripName); }
     await reload();
     closeScrim('dataScrim');
     toast(`Restored ${payload.expenses.length} ${payload.expenses.length === 1 ? 'expense' : 'expenses'}`);
@@ -650,17 +733,69 @@ function renderBackupInfo() {
   $('backupInfo').textContent = last ? `Last backup: ${new Date(last).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : 'No backup yet. Your expenses live only on this phone.';
 }
 
-/* ---------- Trip name ---------- */
-function editTrip() {
-  const inp = $('tripInput'); inp.value = tripName; inp.hidden = false; $('tripBtn').hidden = true; inp.focus(); inp.select();
+/* ---------- Trips ---------- */
+function tripDates(list) {
+  if (!list.length) return 'No expenses yet';
+  const days = list.map(e => e.date.slice(0, 10)).sort();
+  const f = (k) => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }); };
+  const a = days[0], b = days[days.length - 1];
+  return a === b ? f(a) : `${f(a)} – ${f(b)}`;
 }
-async function commitTrip() {
-  const inp = $('tripInput'); if (inp.hidden) return;
-  const v = inp.value.trim() || 'Work trip';
-  inp.hidden = true; $('tripBtn').hidden = false;
-  if (v === tripName) return;
-  tripName = v; $('tripName').textContent = v;
-  try { await setSetting('tripName', v); } catch { toast('Couldn’t save trip name'); }
+function renderTrips() {
+  $('tripList').innerHTML = trips.map(t => {
+    const list = allExpenses.filter(e => e.tripId === t.id);
+    const total = list.reduce((s, e) => s + e.amount, 0);
+    const cur = t.id === currentTripId;
+    return `<button type="button" class="trip-opt" data-trip="${esc(t.id)}" aria-current="${cur}">
+      <strong>${esc(t.name)}</strong><span class="amt num">${fmt(total)}</span>
+      <small class="num">${list.length} ${list.length === 1 ? 'expense' : 'expenses'} · ${esc(tripDates(list))}</small>${cur ? '<span class="badge">Current</span>' : '<span></span>'}
+    </button>`;
+  }).join('');
+  $('renameTrip').value = tripName;
+  const del = $('deleteTripBtn'); del.classList.remove('armed'); del.textContent = 'Delete trip'; $('deleteHint').hidden = true;
+}
+function openTrips() { $('newTripName').value = ''; renderTrips(); openScrim('tripScrim'); }
+async function switchTrip(id) {
+  if (id === currentTripId) { closeScrim('tripScrim'); return; }
+  currentTripId = id; filter = 'all'; query = ''; $('search').value = '';
+  await setSetting('currentTrip', id);
+  await reload();
+  closeScrim('tripScrim');
+  window.scrollTo(0, 0);
+  toast(`Switched to ${tripName}`);
+}
+async function startTrip(ev) {
+  ev.preventDefault();
+  const name = $('newTripName').value.trim();
+  if (!name) { $('newTripName').focus(); toast('Give the trip a name first'); return; }
+  const t = { id: newId(), name, createdAt: new Date().toISOString() };
+  try {
+    await putTrip(t);
+    $('newTripName').blur();
+    await switchTrip(t.id);
+  } catch { toast('Couldn’t create the trip. Try again.'); }
+}
+async function renameTrip() {
+  const v = $('renameTrip').value.trim();
+  const t = trips.find(x => x.id === currentTripId);
+  if (!t || !v || v === t.name) { $('renameTrip').value = tripName; return; }
+  try { await putTrip({ ...t, name: v }); await reload(); toast('Trip renamed'); } catch { toast('Couldn’t rename the trip'); }
+}
+async function deleteTrip() {
+  const btn = $('deleteTripBtn');
+  if (!btn.classList.contains('armed')) { btn.classList.add('armed'); btn.textContent = 'Tap to confirm'; $('deleteHint').hidden = false; return; }
+  const id = currentTripId, name = tripName;
+  const list = allExpenses.filter(e => e.tripId === id);
+  try {
+    await run(['expenses', 'receipts', 'trips'], 'readwrite', t => {
+      list.forEach(e => { (e.receipts || []).forEach(r => t.objectStore('receipts').delete(r.id)); t.objectStore('expenses').delete(e.id); });
+      t.objectStore('trips').delete(id);
+    });
+    currentTripId = null; filter = 'all';
+    await reload();
+    closeScrim('tripScrim');
+    toast(`Deleted ${name}`);
+  } catch { toast('Couldn’t delete the trip. Try again.'); }
 }
 
 /* ---------- Events ---------- */
@@ -676,9 +811,14 @@ $('csvBtn').addEventListener('click', exportCSV);
 $('backupBtn').addEventListener('click', backup);
 $('restoreBtn').addEventListener('click', () => $('restoreFile').click());
 $('restoreFile').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) restore(f); });
-$('tripBtn').addEventListener('click', editTrip);
-$('tripInput').addEventListener('blur', commitTrip);
-$('tripInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') { e.target.value = tripName; e.target.blur(); } });
+$('tripBtn').addEventListener('click', openTrips);
+$('tripsClose').addEventListener('click', () => closeScrim('tripScrim'));
+$('tripScrim').addEventListener('click', (e) => { if (e.target === $('tripScrim')) closeScrim('tripScrim'); });
+$('tripList').addEventListener('click', (e) => { const b = e.target.closest('[data-trip]'); if (b) switchTrip(b.dataset.trip); });
+$('newTripForm').addEventListener('submit', startTrip);
+$('renameTrip').addEventListener('blur', renameTrip);
+$('renameTrip').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
+$('deleteTripBtn').addEventListener('click', deleteTrip);
 $('search').addEventListener('input', (e) => { query = e.target.value; renderList(); });
 $('filters').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f; renderFilters(); renderList(); });
 $('list').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) openSheet(b.dataset.id); });
@@ -705,6 +845,7 @@ document.addEventListener('keydown', (e) => {
   if (!$('viewer').hidden) $('viewer').hidden = true;
   else if (!$('scrim').hidden) closeSheet();
   else if (!$('dataScrim').hidden) closeScrim('dataScrim');
+  else if (!$('tripScrim').hidden) closeScrim('tripScrim');
 });
 
 /* ---------- Boot ---------- */
@@ -714,8 +855,6 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 (async () => {
   try {
     idb = await openDB();
-    const n = await getSetting('tripName');
-    if (n) { tripName = n; $('tripName').textContent = n; }
     await reload();
   } catch {
     loaded = true; $('fab').disabled = true;
